@@ -45,7 +45,6 @@ class Network(object):
 #                    self.nnodes, linklist, self.weighted, self.directed)
 
 
-
     def neighbours_in(self, node):
         """Return an array with the nodes connected TO the given one.
 
@@ -67,6 +66,14 @@ class Network(object):
         """
         outlinks = self.adjmatrix[node, :]
         return np.where(outlinks != 0)[0]  # The output is a tuple of arrays
+
+    @property
+    def degrees_in(self):
+        return np.sum(self.adjmatrix.astype(bool), axis=0)
+
+    @property
+    def degrees_out(self):
+        return np.sum(self.adjmatrix.astype(bool), axis=1)
 
     def update_link(self, link):
         """Set the new weight of the connection i -> j.
