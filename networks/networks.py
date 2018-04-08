@@ -17,13 +17,6 @@ class Network(object):
             nnodes : int
                 Number of nodes.
 
-            linkslist : list of 2(3)-tuples 
-                List with the connections between nodes. If the
-                graphs is directed, a tuple (j, i) means that there
-                is a link pointing from node j to node i. If the 
-                graph is weighted, there is a third element in the
-                tuple with the weight of the connection.
-
             weighted : bool
                 If True, the graph is weighed.
                 
@@ -43,10 +36,14 @@ class Network(object):
         else:
             self.dtype = float
 
-        # Calculate and store the adjacency matrix 
-        if linklist != None:
-            self.adjmatrix = self._adjlist2matrix(
-                    self.nnodes, linklist, self.weighted, self.directed)
+        # Create the adjacency matrix
+        self.adjmatrix = np.zeros((self.nnodes, self.nnodes), dtype=self.dtype)
+
+#        # Calculate and store the adjacency matrix 
+#        if linklist != None:
+#            self.adjmatrix = self._adjlist2matrix(
+#                    self.nnodes, linklist, self.weighted, self.directed)
+
 
 
     def neighbours_in(self, node):
@@ -78,8 +75,25 @@ class Network(object):
         is the same as j -> i.
 
         """
-        self.adjmatrix = self._setlink(adjmatrix, link, self.directed)
+        self.adjmatrix = self._setlink(self.adjmatrix, link, self.directed)
         return 
+
+    def read_adjlist(self, linklist):
+        """Add (or update) links to graph from a list.
+
+        Parameters
+        ----------
+            linklist : list of 2(3)-tuples 
+                List with the connections between nodes. If the
+                graphs is directed, a tuple (i, j) means that there
+                is a link pointing from node i to node j. If the 
+                graph is weighted, there is a third element in the
+                tuple with the weight of the connection.
+
+        """
+        for link in linklist:
+            self.update_link(link)
+        return
 
 
     @classmethod
@@ -91,7 +105,7 @@ class Network(object):
             nnodes : int
                 Number of nodes.
 
-            linkslist : list of 2(3)-tuples 
+            linklist : list of 2(3)-tuples 
                 List with the connections between nodes. If the
                 graphs is directed, a tuple (i, j) means that there
                 is a link pointing from node i to node j. If the 
@@ -173,4 +187,83 @@ class Network(object):
             adjmatrix[link[1], link[0]] = newweight
 
         return adjmatrix
+
     
+
+class Network2D(Network):
+    """Regular 2D network.
+
+    """
+    def __init__(self, nrows, ncols, pbc=True, weighted=False, directed=False):
+        """Instance initialization method.
+
+        Parameters
+        ----------
+            nrows : int
+                Number rows in the 2D lattice.
+
+            ncols : int
+                Number columns in the 2D lattice.
+            
+            pbc : bool
+                If True, periodic boundary conditions are used. 
+
+        """
+        # Store parameters
+        self.nrows = nrows
+        self.ncols = ncols
+        self.pbc = pbc
+
+        self.nnodes = self.nrows*self.ncols
+
+        Network.__init__(
+                self, self.nnodes, weighted=weighted, directed=directed)
+
+        # Calculate the adjacency list and update the network
+        adjlist = regularnetwork_list((nrows, ncols), pbc=self.pbc)
+        self.read_adjlist(adjlist)
+
+
+def regularnetwork_list(shape, pbc=True):
+    """Return the adjacency list of a regular network.
+
+    Only the nearest neighbours are included in the list.
+
+    Parameters
+    ----------
+        shape : int or sequence of ints
+            Shape of the network. For example, a square network with 
+            side 3 would be (3, 3).
+
+    """
+    # Calculate the number of nodes in the network
+    nnodes = np.product(shape)
+    dim = len(shape)
+
+    adjlist = list()
+
+    for j_node in range(nnodes):
+        # Find the index of the j-th node in the network
+        idx = np.unravel_index(j_node, shape)
+
+        # Find the adjacent nodes in each direction
+        for j_dim in range(dim):
+            vec = np.zeros(dim, dtype=int)
+            vec[j_dim] += 1
+
+            # Node behind j_node in the j_dim direction
+            if idx[j_dim] != 0 or pbc:
+                j_neigh = np.ravel_multi_index(
+                        (idx - vec), shape, mode="wrap") 
+                adjlist.append([j_node, j_neigh])
+
+            # Node in front of j_node in the j_dim direction
+            if idx[j_dim] != (shape[j_dim] - 1) or pbc:
+                j_neigh = np.ravel_multi_index(
+                        (idx + vec), shape, mode="wrap") 
+                adjlist.append([j_node, j_neigh])
+
+    return adjlist
+
+            
+
