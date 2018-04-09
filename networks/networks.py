@@ -128,7 +128,7 @@ class Network(object):
     # Auxiliar functions
     # ========================================
     @classmethod
-    def _adjlist2matrix(cls, nnodes, linklist, weighted, directed):
+    def adjlist2matrix(cls, nnodes, linklist, weighted, directed):
         """Create the adjacency matrix from a list with the connections.
 
         Parameters
