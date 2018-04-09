@@ -44,7 +44,8 @@ class Network(object):
 #            self.adjmatrix = self._adjlist2matrix(
 #                    self.nnodes, linklist, self.weighted, self.directed)
 
-
+    # Network info
+    # ========================================
     def neighbours_in(self, node):
         """Return an array with the nodes connected TO the given one.
 
@@ -75,6 +76,9 @@ class Network(object):
     def degrees_out(self):
         return np.sum(self.adjmatrix.astype(bool), axis=1)
 
+
+    # Network manipulation
+    # ========================================
     def update_link(self, link):
         """Set the new weight of the connection i -> j.
 
@@ -102,7 +106,8 @@ class Network(object):
             self.update_link(link)
         return
 
-
+    # Auxiliar functions
+    # ========================================
     @classmethod
     def _adjlist2matrix(cls, nnodes, linklist, weighted, directed):
         """Create the adjacency matrix from a list with the connections.
