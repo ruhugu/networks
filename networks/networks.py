@@ -47,7 +47,7 @@ class Network(object):
     # Network info
     # ========================================
     def neighbours_in(self, node):
-        """Return an array with the nodes connected TO the given one.
+        """Return an array with the nodes pointing TO the given one.
 
         Returns the nodes j such that j -> node.
         In an undirected graph this method gives the same output 
@@ -58,7 +58,7 @@ class Network(object):
         return np.where(inlinks != 0)[0]  # The output is a tuple of arrays
 
     def neighbours_out(self, node):
-        """Return an array with the nodes which the given one is connected TO.
+        """Return an array with the nodes which the given one is pointing TO.
 
         Returns the nodes j such that node -> j.
         In an undirected graph this method gives the same output 
@@ -70,10 +70,16 @@ class Network(object):
 
     @property
     def degrees_in(self):
+        """Return 1D array with the "in" degree of each node.
+
+        """
         return np.sum(self.adjmatrix.astype(bool), axis=0)
 
     @property
     def degrees_out(self):
+        """Return 1D array with the "out" degree of each node.
+
+        """
         return np.sum(self.adjmatrix.astype(bool), axis=1)
 
 
