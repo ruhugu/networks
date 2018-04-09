@@ -82,6 +82,19 @@ class Network(object):
         """
         return np.sum(self.adjmatrix.astype(bool), axis=1)
 
+    def adjlist(self, weighted=None, directed=None):
+        """Return the adjacency list of the graph.
+
+        """
+        if weighted == None:
+            weighted = self.weighted
+
+        if directed == None:
+            directed = self.directed
+
+        return self.adjmatrix2list(
+                self.adjmatrix, weighted=weighted, directed=directed)
+
 
     # Network manipulation
     # ========================================
@@ -160,6 +173,59 @@ class Network(object):
             adjmatrix = cls._setlink(adjmatrix, link, directed)
 
         return adjmatrix
+
+
+    @classmethod
+    def adjmatrix2list(cls, adjmatrix, weighted=True, directed=True):
+        """Create an adjacency list from the adjacency matrix.
+
+        Parameters
+        ----------
+            adjmatrix : int or bool 2D array
+                Adjacency matrix.
+
+            weighted : bool
+                If True, the weigth of the links are stored in the list.
+                
+            directed : bool
+                If False, only the links in the lower side of the 
+                adjacency matrix are store (since the matrix is 
+                symmetric).
+
+        Returns
+        -------
+            adjlist : 2(3)-tuple list
+                List with the connections between nodes. If the
+                graphs is directed, a tuple (i, j) means that there
+                is a link pointing from node i to node j. If the 
+                graph is weighted, there is a third element in the
+                tuple with the weight of the connection.
+
+        """
+        # If the graph is not directed, ignore the upper side of
+        # the adjacency matrix
+        if not directed:
+            auxmatrix = np.tril(adjmatrix)
+        else:
+            auxmatrix = adjmatrix
+
+        # Initialize list
+        adjlist = list()
+
+        for j_node in range(auxmatrix.shape[0]):
+            # Find the nodes which j_node is pointing to
+            outlinks = auxmatrix[j_node, :]
+            neighs_out = np.where(outlinks != 0)[0]  
+
+            # Store the links in the list
+            for neigh in neighs_out:
+                link = [j_node, neigh]
+                if weighted:
+                    link.append(float(auxmatrix[j_node, neigh]))
+
+                adjlist.append(link)
+
+        return adjlist
 
 
     @staticmethod
