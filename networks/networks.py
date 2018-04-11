@@ -69,14 +69,14 @@ class Network(object):
         return np.where(outlinks != 0)[0]  # The output is a tuple of arrays
 
     @property
-    def degrees_in(self):
+    def degree_in(self):
         """Return 1D array with the "in" degree of each node.
 
         """
         return np.sum(self.adjmatrix.astype(bool), axis=0)
 
     @property
-    def degrees_out(self):
+    def degree_out(self):
         """Return 1D array with the "out" degree of each node.
 
         """
