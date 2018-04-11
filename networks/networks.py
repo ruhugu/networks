@@ -273,38 +273,138 @@ class Network(object):
         return adjmatrix
 
     
+# TODO: this should be removed and replaced with Lattice
+#class Lattice2D(Network):
+#    """Regular 2D lattice network.
+#
+#    """
+#    def __init__(self, nrows, ncols, pbc=True, weighted=False, directed=False):
+#        """Instance initialization method.
+#
+#        Parameters
+#        ----------
+#            nrows : int
+#                Number rows in the 2D lattice.
+#
+#            ncols : int
+#                Number columns in the 2D lattice.
+#            
+#            pbc : bool
+#                If True, periodic boundary conditions are used. 
+#
+#        """
+#        # Store parameters
+#        self.nrows = nrows
+#        self.ncols = ncols
+#        self.pbc = pbc
+#
+#        self.nnodes = self.nrows*self.ncols
+#
+#        Network.__init__(
+#                self, self.nnodes, weighted=weighted, directed=directed)
+#
+#        # Calculate the adjacency list and update the network
+#        adjlist = regularlattice_list((nrows, ncols), pbc=self.pbc)
+#        self.read_adjlist(adjlist)
 
-class Network2D(Network):
-    """Regular 2D network.
+
+class Lattice(Network):
+    """Regular N-dimensional lattice network.
+
+    A node with index (j0, j1, .., jm) with m the size of shape is
+    numbered according to the following rule:
+        j_node = j0 + j1*shape[0] + j2*shape[0]*shape[1] 
+                + ... + jm*np.prod(shape[0:m])
 
     """
-    def __init__(self, nrows, ncols, pbc=True, weighted=False, directed=False):
+    def __init__(self, shape, pbc=True, weighted=False, directed=False):
         """Instance initialization method.
 
         Parameters
         ----------
-            nrows : int
-                Number rows in the 2D lattice.
+            shape : int tuple
+                Shape of the lattice. 
 
-            ncols : int
-                Number columns in the 2D lattice.
-            
             pbc : bool
                 If True, periodic boundary conditions are used. 
 
+            weighted : bool
+                If True, the weigth of the links are stored in the list.
+                
+            directed : bool
+                If False, only the links in the lower side of the 
+                adjacency matrix are store (since the matrix is 
+                symmetric).
+
         """
         # Store parameters
-        self.nrows = nrows
-        self.ncols = ncols
+        self.shape = shape
         self.pbc = pbc
+        # (weighted and directed parameters are stored when calling 
+        # Network's __init__ method)
 
+        # Calculate the number of nodes in the Network
         self.nnodes = self.nrows*self.ncols
 
         Network.__init__(
                 self, self.nnodes, weighted=weighted, directed=directed)
 
         # Calculate the adjacency list and update the network
-        adjlist = regularnetwork_list((nrows, ncols), pbc=self.pbc)
+        adjlist = self.regularlattice_list((nrows, ncols), pbc=self.pbc)
+        self.read_adjlist(adjlist)
+
+
+    @staticmethod
+    def regularlattice_list(shape, pbc=True):
+        """Return the adjacency list of a regular lattice network.
+
+        A node with index (j0, j1, .., jm) with m the size of shape is
+        numbered according to the following rule:
+            j_node = j0 + j1*shape[0] + j2*shape[0]*shape[1] 
+                    + ... + jm*np.prod(shape[0:m])
+        Only the nearest neighbours are included in the list.
+
+        Parameters
+        ----------
+            shape : int or sequence of ints
+                Shape of the network. For example, a square network with 
+                side 3 would have shape (3, 3).
+
+            Returns
+            -------
+                adjlist : 2-tuple list
+                    List with the connections between nodes. A tuple (i, j)
+                    means that there is a link pointing from node i to node j.
+
+        """
+        # Calculate the number of nodes in the network
+        nnodes = np.product(shape)
+        dim = len(shape)
+
+        adjlist = list()
+
+        for j_node in range(nnodes):
+            # Find the index of the j-th node in the network
+            idx = np.unravel_index(j_node, shape)
+
+            # Find the adjacent nodes in each direction
+            for j_dim in range(dim):
+                vec = np.zeros(dim, dtype=int)
+                vec[j_dim] += 1
+
+                # Node behind j_node in the j_dim direction
+                if idx[j_dim] != 0 or pbc:
+                    j_neigh = np.ravel_multi_index(
+                            (idx - vec), shape, mode="wrap") 
+                    adjlist.append([j_node, j_neigh])
+
+                # Node in front of j_node in the j_dim direction
+                if idx[j_dim] != (shape[j_dim] - 1) or pbc:
+                    j_neigh = np.ravel_multi_index(
+                            (idx + vec), shape, mode="wrap") 
+                    adjlist.append([j_node, j_neigh])
+
+        return adjlist
         self.read_adjlist(adjlist)
 
 
@@ -317,37 +417,12 @@ def regularnetwork_list(shape, pbc=True):
     ----------
         shape : int or sequence of ints
             Shape of the network. For example, a square network with 
-            side 3 would be (3, 3).
+            side 3 would have shape (3, 3).
+
+        Returns
+        -------
+            adjlist : 2-tuple list
+                List with the connections between nodes. A tuple (i, j)
+                means that there is a link pointing from node i to node j.
 
     """
-    # Calculate the number of nodes in the network
-    nnodes = np.product(shape)
-    dim = len(shape)
-
-    adjlist = list()
-
-    for j_node in range(nnodes):
-        # Find the index of the j-th node in the network
-        idx = np.unravel_index(j_node, shape)
-
-        # Find the adjacent nodes in each direction
-        for j_dim in range(dim):
-            vec = np.zeros(dim, dtype=int)
-            vec[j_dim] += 1
-
-            # Node behind j_node in the j_dim direction
-            if idx[j_dim] != 0 or pbc:
-                j_neigh = np.ravel_multi_index(
-                        (idx - vec), shape, mode="wrap") 
-                adjlist.append([j_node, j_neigh])
-
-            # Node in front of j_node in the j_dim direction
-            if idx[j_dim] != (shape[j_dim] - 1) or pbc:
-                j_neigh = np.ravel_multi_index(
-                        (idx + vec), shape, mode="wrap") 
-                adjlist.append([j_node, j_neigh])
-
-    return adjlist
-
-            
-
