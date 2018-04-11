@@ -154,6 +154,53 @@ class Network(object):
                 directed=self.directed)
         return
 
+
+    # Network properties
+    # ========================================
+    def clusteringcoeff(self, node):
+        """Calculate the clustering coefficient of the given node. 
+
+        This method only works for undirected networks.
+
+        See Wikipedia page:
+        https://en.wikipedia.org/wiki/Clustering_coefficient
+
+        """
+        if self.directed:
+            raise ValueError(
+                    "This method does not work with directed networks.")
+
+        # Find the neighbours of the node and its degree
+        neighs = self.neighbours_out(node)
+        degree = self.degree_out[node]
+
+        # Calculate the number of conections between neighbours
+        neighpairs = np.sum(np.triu(self.adjmatrix[neighs][:, neighs]))
+
+        # Number of possible pairs
+        maxpairs = degree*(degree - 1)/2
+
+        return float(neighpairs)/maxpairs
+
+    def clusteringcoeff_mean(self):
+        """Calculate the mean clustering coefficient of the network.
+
+        """
+        return np.mean(
+                [self.clusteringcoeff(node) for node in range(self.nnodes)])
+
+    def degree_out_dist(self):
+        """Return the out degree distribution of the network.
+        
+        """
+        return np.bincount(self.degree_out)
+    
+    def degree_in_dist(self):
+        """Return the in degree distribution of the network.
+        
+        """
+        return np.bincount(self.degree_in)
+
     # Auxiliar functions
     # ========================================
     @classmethod
