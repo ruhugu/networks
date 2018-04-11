@@ -98,14 +98,28 @@ class Network(object):
 
     # Network manipulation
     # ========================================
-    def update_link(self, link):
+    def update_link(self, link, newweight=1):
         """Set the new weight of the connection i -> j.
 
         This method is useful to handle undirected graphs, where i -> j 
         is the same as j -> i.
 
+        Parameters
+        ----------
+            link : 2-tuple 
+                If the graphs is directed, a tuple (i, j) refers to the
+                 link pointing from node i to node j (else it
+                just means that there is an undirected link between the
+                two).
+            newweight : float
+                New value of the weight. If the network is not weighted
+                any value different from zero creates a new link while
+                a value of zero removes it.
+                
         """
-        self.adjmatrix = self._setlink(self.adjmatrix, link, self.directed)
+        # TODO: Improve this, right now it looks ugly
+        self.adjmatrix = self._setlink(
+                self.adjmatrix, link + [newweight,], self.directed)
         return 
 
     def read_adjlist(self, linklist):
@@ -121,8 +135,9 @@ class Network(object):
                 tuple with the weight of the connection.
 
         """
-        for link in linklist:
-            self.update_link(link)
+        self.adjmatrix = self.adjlist2matrix(
+                self.nnodes, linklist, weighted=self.weighted,
+                directed=self.directed)
         return
 
     # Auxiliar functions
@@ -161,9 +176,6 @@ class Network(object):
             dtype = float
         else:
             dtype = bool
-            # Add a weight ("True") to each link
-            for link in linklist:
-                link.append(True)
 
         # Initialize matrix
         adjmatrix = np.zeros((nnodes, nnodes), dtype=dtype)
