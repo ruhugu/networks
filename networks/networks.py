@@ -370,13 +370,13 @@ class Lattice(Network):
         # Network's __init__ method)
 
         # Calculate the number of nodes in the Network
-        self.nnodes = self.nrows*self.ncols
+        self.nnodes = np.prod(self.shape)
 
         Network.__init__(
                 self, self.nnodes, weighted=weighted, directed=directed)
 
         # Calculate the adjacency list and update the network
-        adjlist = self.regularlattice_list((nrows, ncols), pbc=self.pbc)
+        adjlist = self.regularlattice_list(self.shape, pbc=self.pbc)
         self.read_adjlist(adjlist)
 
 
