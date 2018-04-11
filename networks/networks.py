@@ -1,14 +1,11 @@
 #-*- coding: utf-8 -*-
 from __future__ import (print_function, division, 
                         absolute_import, unicode_literals)
-
 import numpy as np
-from matplotlib import pyplot as plt
-from matplotlib import colors as colors
 
 class Network(object):
 
-    def __init__(self, nnodes, linklist=None, weighted=False,
+    def __init__(self, nnodes, edgelist=None, weighted=False,
                       directed=False):
         """Instance initialization method.
 
@@ -40,9 +37,9 @@ class Network(object):
         self.adjmatrix = np.zeros((self.nnodes, self.nnodes), dtype=self.dtype)
 
 #        # Calculate and store the adjacency matrix 
-#        if linklist != None:
+#        if edgelist != None:
 #            self.adjmatrix = self._adjlist2matrix(
-#                    self.nnodes, linklist, self.weighted, self.directed)
+#                    self.nnodes, edgelist, self.weighted, self.directed)
 
     # Network info
     # ========================================
@@ -54,8 +51,8 @@ class Network(object):
         as neighbours_out.
 
         """
-        inlinks = self.adjmatrix[:, node]
-        return np.where(inlinks != 0)[0]  # The output is a tuple of arrays
+        inedges = self.adjmatrix[:, node]
+        return np.where(inedges != 0)[0]  # The output is a tuple of arrays
 
     def neighbours_out(self, node):
         """Return an array with the nodes which the given one is pointing TO.
@@ -65,8 +62,8 @@ class Network(object):
         as neighbours_in.
 
         """
-        outlinks = self.adjmatrix[node, :]
-        return np.where(outlinks != 0)[0]  # The output is a tuple of arrays
+        outedges = self.adjmatrix[node, :]
+        return np.where(outedges != 0)[0]  # The output is a tuple of arrays
 
     @property
     def degree_in(self):
@@ -98,7 +95,7 @@ class Network(object):
 
     # Network manipulation
     # ========================================
-    def update_link(self, link, newweight=1):
+    def update_edge(self, edge, newweight=1):
         """Set the new weight of the connection i -> j.
 
         This method is useful to handle undirected graphs, where i -> j 
@@ -106,51 +103,51 @@ class Network(object):
 
         Parameters
         ----------
-            link : 2-tuple 
+            edge : 2-tuple 
                 If the graphs is directed, a tuple (i, j) refers to the
-                 link pointing from node i to node j (else it
-                just means that there is an undirected link between the
+                 edge pointing from node i to node j (else it
+                just means that there is an undirected edge between the
                 two).
             newweight : float
                 New value of the weight. If the network is not weighted
-                any value different from zero creates a new link while
+                any value different from zero creates a new edge while
                 a value of zero removes it.
                 
         """
         # TODO: Improve this, right now it looks ugly
-        self.adjmatrix = self._setlink(
-                self.adjmatrix, link + [newweight,], self.directed)
+        self.adjmatrix = self._setedge(
+                self.adjmatrix, edge + [newweight,], self.directed)
         return 
 
-    def remove_link(self, link):
-        """Remove the link.
+    def remove_edge(self, edge):
+        """Remove the edge.
 
         Parameters
         ----------
-            link : 2-tuple 
+            edge : 2-tuple 
                 If the graphs is directed, a tuple (i, j) refers to the
-                link pointing from node i to node j (else it just means
-                that there is an undirected link between the two).
+                edge pointing from node i to node j (else it just means
+                that there is an undirected edge between the two).
 
         """
-        self.update_link(link, newweight=0)
+        self.update_edge(edge, newweight=0)
         return 
 
-    def read_adjlist(self, linklist):
-        """Add (or update) links to graph from a list.
+    def read_adjlist(self, edgelist):
+        """Add (or update) edges to graph from a list.
 
         Parameters
         ----------
-            linklist : list of 2(3)-tuples 
+            edgelist : list of 2(3)-tuples 
                 List with the connections between nodes. If the
                 graphs is directed, a tuple (i, j) means that there
-                is a link pointing from node i to node j. If the 
+                is a edge pointing from node i to node j. If the 
                 graph is weighted, there is a third element in the
                 tuple with the weight of the connection.
 
         """
         self.adjmatrix = self.adjlist2matrix(
-                self.nnodes, linklist, weighted=self.weighted,
+                self.nnodes, edgelist, weighted=self.weighted,
                 directed=self.directed)
         return
 
@@ -201,10 +198,22 @@ class Network(object):
         """
         return np.bincount(self.degree_in)
 
+    def distance(self, i_node, j_node):
+        """Return the shortest path length between two nodes.
+
+        Parameters
+            i_node : int
+                Start node.
+
+            j_node : int 
+                End node.
+
+        """
+
     # Auxiliar functions
     # ========================================
     @classmethod
-    def adjlist2matrix(cls, nnodes, linklist, weighted, directed):
+    def adjlist2matrix(cls, nnodes, edgelist, weighted, directed):
         """Create the adjacency matrix from a list with the connections.
 
         Parameters
@@ -212,10 +221,10 @@ class Network(object):
             nnodes : int
                 Number of nodes.
 
-            linklist : list of 2(3)-tuples 
+            edgelist : list of 2(3)-tuples 
                 List with the connections between nodes. If the
                 graphs is directed, a tuple (i, j) means that there
-                is a link pointing from node i to node j. If the 
+                is a edge pointing from node i to node j. If the 
                 graph is weighted, there is a third element in the
                 tuple with the weight of the connection.
 
@@ -229,7 +238,7 @@ class Network(object):
         -------
             adjmatrix : array
                 (nnodes, nnodes) array where the element (i, j) 
-                is the value of the link from i to j.
+                is the value of the edge from i to j.
 
         """
         # Choose the data type according to type of graph
@@ -242,8 +251,8 @@ class Network(object):
         adjmatrix = np.zeros((nnodes, nnodes), dtype=dtype)
 
         # Fill the matrix
-        for link in linklist: 
-            adjmatrix = cls._setlink(adjmatrix, link, directed)
+        for edge in edgelist: 
+            adjmatrix = cls._setedge(adjmatrix, edge, directed)
 
         return adjmatrix
 
@@ -258,10 +267,10 @@ class Network(object):
                 Adjacency matrix.
 
             weighted : bool
-                If True, the weigth of the links are stored in the list.
+                If True, the weigth of the edges are stored in the list.
                 
             directed : bool
-                If False, only the links in the lower side of the 
+                If False, only the edges in the lower side of the 
                 adjacency matrix are store (since the matrix is 
                 symmetric).
 
@@ -270,7 +279,7 @@ class Network(object):
             adjlist : 2(3)-tuple list
                 List with the connections between nodes. If the
                 graphs is directed, a tuple (i, j) means that there
-                is a link pointing from node i to node j. If the 
+                is a edge pointing from node i to node j. If the 
                 graph is weighted, there is a third element in the
                 tuple with the weight of the connection.
 
@@ -287,22 +296,22 @@ class Network(object):
 
         for j_node in range(auxmatrix.shape[0]):
             # Find the nodes which j_node is pointing to
-            outlinks = auxmatrix[j_node, :]
-            neighs_out = np.where(outlinks != 0)[0]  
+            outedges = auxmatrix[j_node, :]
+            neighs_out = np.where(outedges != 0)[0]  
 
-            # Store the links in the list
+            # Store the edges in the list
             for neigh in neighs_out:
-                link = [j_node, neigh]
+                edge = [j_node, neigh]
                 if weighted:
-                    link.append(float(auxmatrix[j_node, neigh]))
+                    edge.append(float(auxmatrix[j_node, neigh]))
 
-                adjlist.append(link)
+                adjlist.append(edge)
 
         return adjlist
 
 
     @staticmethod
-    def _setlink(adjmatrix, link, directed):
+    def _setedge(adjmatrix, edge, directed):
         """Set the new weight of the connection i -> j.
 
         This method is useful to handle undirected graphs, where i -> j 
@@ -313,10 +322,10 @@ class Network(object):
             adjmatrix : 2d array
                 Adjacency matrix to be updated.
 
-            link : 2(3)-tuple 
+            edge : 2(3)-tuple 
                 If the graphs is directed, a tuple (i, j) means that
-                there is a link pointing from node i to node j (else it
-                just means that there is an undirected link between the
+                there is a edge pointing from node i to node j (else it
+                just means that there is an undirected edge between the
                 two). If the graph is weighted, there is a third element
                 in the tuple with the weight of the connection.
 
@@ -329,19 +338,19 @@ class Network(object):
                 Updated adjacency matrix.
 
         """
-        # Check if the weight of the link is given
-        if len(link) == 3:
-            newweight = link[2]
+        # Check if the weight of the edge is given
+        if len(edge) == 3:
+            newweight = edge[2]
         else:
             newweight = 1
 
-        # Update the link
-        adjmatrix[link[0], link[1]] = newweight
+        # Update the edge
+        adjmatrix[edge[0], edge[1]] = newweight
 
         # If the graph is not directed, update the symmetric element
         # of the adjacency matrix
         if not directed:
-            adjmatrix[link[1], link[0]] = newweight
+            adjmatrix[edge[1], edge[0]] = newweight
 
         return adjmatrix
 
@@ -402,10 +411,10 @@ class Lattice(Network):
                 If True, periodic boundary conditions are used. 
 
             weighted : bool
-                If True, the weigth of the links are stored in the list.
+                If True, the weigth of the edges are stored in the list.
                 
             directed : bool
-                If False, only the links in the lower side of the 
+                If False, only the edges in the lower side of the 
                 adjacency matrix are store (since the matrix is 
                 symmetric).
 
@@ -447,7 +456,7 @@ class Lattice(Network):
             -------
                 adjlist : 2-tuple list
                     List with the connections between nodes. A tuple (i, j)
-                    means that there is a link pointing from node i to node j.
+                    means that there is a edge pointing from node i to node j.
 
         """
         # Calculate the number of nodes in the network
@@ -533,7 +542,7 @@ class Regular(Network):
             -------
                 adjlist : 2-tuple list
                     List with the connections between nodes. A tuple (i, j)
-                    means that there is a link pointing from node i to node j.
+                    means that there is a edge pointing from node i to node j.
                         
         """
         # If grade is not even raise error
