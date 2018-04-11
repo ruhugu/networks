@@ -478,24 +478,83 @@ class Lattice(Network):
                     adjlist.append([j_node, j_neigh])
 
         return adjlist
+
+
+class Regular(Network):
+    """Regular network. 
+    
+    The resulting network is unweighted and undirected.
+
+    See Wikipedia page:
+    https://en.wikipedia.org/wiki/Regular_graph
+
+    """
+    def __init__(self, nnodes, grade):
+        """Instance initialization method.
+
+        Parameters
+        ----------
+            nnodes : int
+                Number of nodes in the lattice.
+
+            grade : bool
+                Number of neighbours of each node. It must be a even
+                number, so that any node has the same number of 
+                neighbours at both sides.
+
+        """
+        # Store parameters
+        self.grade = grade
+        self.nnodes = nnodes
+
+        Network.__init__(
+                self, nnodes, weighted=False, directed=False)
+
+        # Calculate the adjacency list and update the network
+        adjlist = self.regular_list(nnodes, grade)
         self.read_adjlist(adjlist)
 
 
-def regularnetwork_list(shape, pbc=True):
-    """Return the adjacency list of a regular network.
+    @staticmethod
+    def regular_list(nnodes, grade):
+        """Return the adjacency list of a regular network.
 
-    Only the nearest neighbours are included in the list.
+        Parameters
+        ----------
+            nnodes : int
+                Number of nodes in the network.
 
-    Parameters
-    ----------
-        shape : int or sequence of ints
-            Shape of the network. For example, a square network with 
-            side 3 would have shape (3, 3).
+            grade : int
+                Number of neighbours of each node. It must be a even
+                number, so that any node has the same number of 
+                neighbours at both sides.
 
-        Returns
-        -------
-            adjlist : 2-tuple list
-                List with the connections between nodes. A tuple (i, j)
-                means that there is a link pointing from node i to node j.
+            Returns
+            -------
+                adjlist : 2-tuple list
+                    List with the connections between nodes. A tuple (i, j)
+                    means that there is a link pointing from node i to node j.
+                        
+        """
+        # If grade is not even raise error
+        if (grade % 2 != 0):
+            raise ValueError("grade must be an even number.")
+
+        # Initialize adjacency list
+        adjlist = list()
+
+        for j_node in range(nnodes):
+            for dist in range(1, grade//2 + 1):
+                adjlist.append([j_node, (j_node + dist) % nnodes])
+                adjlist.append([j_node, (j_node - dist) % nnodes])
+
+        return adjlist
+
+
+class WattsStrogatz(Regular):
+    """Watts-Strogatz network.
+
+    See Wikipedia page:
+    https://en.wikipedia.org/wiki/Watts%E2%80%93Strogatz_model
 
     """
