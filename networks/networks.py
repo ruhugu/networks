@@ -122,6 +122,20 @@ class Network(object):
                 self.adjmatrix, link + [newweight,], self.directed)
         return 
 
+    def remove_link(self, link):
+        """Remove the link.
+
+        Parameters
+        ----------
+            link : 2-tuple 
+                If the graphs is directed, a tuple (i, j) refers to the
+                link pointing from node i to node j (else it just means
+                that there is an undirected link between the two).
+
+        """
+        self.update_link(link, newweight=0)
+        return 
+
     def read_adjlist(self, linklist):
         """Add (or update) links to graph from a list.
 
