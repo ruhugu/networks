@@ -210,6 +210,73 @@ class Network(object):
 
         """
 
+    # TODO: check that there are not negative weights
+    # TODO: it may be worth using cython here
+    def distances(self, startnode):
+        """Calculate the distances from a given node the rest.
+
+        This method fails if there are nodes which are not connected.
+
+        This method uses Dijkstra algorithm, see:
+        https://brilliant.org/wiki/dijkstras-short-path-finder/
+
+        Parameters
+        ----------
+            startnode : int
+                Index of the start node.
+
+        Returns
+        -------
+            distances : array
+                Distance to the rest of nodes.
+
+        """
+        # Initialize the distances to infinity
+        distances = np.full(self.nnodes, float("inf"), dtype=float)
+        distances[startnode] = 0
+
+        visited = np.zeros(self.nnodes, dtype=bool)
+
+        while np.sum(visited) < self.nnodes:
+            # Find the node with the minimum distance to startnode
+            node = np.ma.masked_array(
+                    distances, mask=visited).argmin()
+            # Mark it as visited
+            visited[node] = True
+
+            for neigh in self.neighbours_out(node):
+                newdist = distances[node] + self.adjmatrix[node, neigh]
+                if newdist < distances[neigh]:
+                    distances[neigh] = newdist
+
+        return distances
+
+
+    def diameter(self):
+        """Calculate the diameter of the network.
+
+        """
+        nodes = np.arange(self.nnodes)
+        maxdistances = np.zeros(self.nnodes, dtype=float)
+
+        for j in range(self.nnodes):
+            maxdistances[j] = np.amax(self.distances(j))
+
+        return np.amax(maxdistances)
+
+    def distance_mean(self):
+        """Calculate the mean length.
+        
+        """
+        # Initialize distance matrix
+        distances = np.zeros((self.nnodes, self.nnodes - 1), dtype=float)
+
+        for node in range(self.nnodes):
+            nodedistances = self.distances(node)
+            distances[node] = np.extract(nodedistances != 0, nodedistances)
+
+        return np.mean(distances)
+
     # Auxiliar functions
     # ========================================
     @classmethod
@@ -230,7 +297,7 @@ class Network(object):
 
             weighted : bool
                 If True, the graph is weighed.
-                
+
             directed : bool
                 If True, the connections in the graph have a direction.
 
@@ -268,7 +335,7 @@ class Network(object):
 
             weighted : bool
                 If True, the weigth of the edges are stored in the list.
-                
+
             directed : bool
                 If False, only the edges in the lower side of the 
                 adjacency matrix are store (since the matrix is 
@@ -354,7 +421,7 @@ class Network(object):
 
         return adjmatrix
 
-    
+
 # TODO: this should be removed and replaced with Lattice
 #class Lattice2D(Network):
 #    """Regular 2D lattice network.
@@ -412,7 +479,7 @@ class Lattice(Network):
 
             weighted : bool
                 If True, the weigth of the edges are stored in the list.
-                
+
             directed : bool
                 If False, only the edges in the lower side of the 
                 adjacency matrix are store (since the matrix is 
