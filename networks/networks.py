@@ -190,13 +190,13 @@ class Network(object):
         """Return the out degree distribution of the network.
         
         """
-        return np.bincount(self.degree_out)
+        return np.bincount(self.degree_put).astype(float)/self.nnodes
     
     def degree_in_dist(self):
         """Return the in degree distribution of the network.
         
         """
-        return np.bincount(self.degree_in)
+        return np.bincount(self.degree_in).astype(float)/self.nnodes
 
     def distance(self, i_node, j_node):
         """Return the shortest path length between two nodes.
