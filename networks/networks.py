@@ -277,6 +277,38 @@ class Network(object):
 
         return np.mean(distances)
 
+
+    # Graphical representation
+    # ========================================
+    def plot_degree_in_dist(self):
+        """Plot in degree distribution of the lattice.
+
+        """
+        fig, ax = plt.subplots()
+        
+        degree_dist = self.degree_in_dist()
+        x = np.arange(degree_dist.size)
+        ax.bar(x, degree_dist)
+        ax.set_xlabel("degree")
+        ax.set_ylabel("P(degree)")
+
+        return fig, ax
+
+    def plot_degree_out_dist(self):
+        """Plot out degree distribution of the lattice.
+
+        """
+        fig, ax = plt.subplots()
+        
+        degree_dist = self.degree_out_dist()
+        x = np.arange(degree_dist.size)
+        ax.bar(x, degree_dist)
+        ax.set_xlabel("degree")
+        ax.set_ylabel("P(degree)")
+
+        return fig, ax
+
+
     # Auxiliar functions
     # ========================================
     @classmethod
@@ -634,3 +666,96 @@ class WattsStrogatz(Regular):
     https://en.wikipedia.org/wiki/Watts%E2%80%93Strogatz_model
 
     """
+    def __init__(self, nnodes, grade, prob):
+        """Instance initialization method.
+
+        Parameters
+        ----------
+            nnodes : int
+                Number of nodes in the lattice.
+
+            grade : bool
+                Number of neighbours of each node. It must be a even
+                number, so that any node has the same number of 
+                neighbours at both sides.
+
+            prob : float
+                Rewiring probability.
+
+        """
+        # Store parameters
+        self.grade = grade
+        self.prob = prob
+
+        # Initialize the network as a regular one with the given grade
+        Regular.__init__(self, nnodes, grade=grade)
+
+        # Rewire the nodes
+        for j_node in range(self.nnodes):
+            # Iterate throgh the edges with nodes verifying i > j_node
+            for dist in range(1, grade//2 + 1):
+                if np.random.random() < prob: 
+                    # Remove edge
+                    j_oldneigh = (j_node + dist) % self.nnodes
+                    self.update_edge([j_node, j_oldneigh], 0)
+
+                    # Forbidden new edges
+                    forbidden = self.neighbours_out(j_node).tolist()
+                    forbidden.append(j_node)
+
+                    # Create new edge
+                    choices = range(self.nnodes)
+                    for node in forbidden:
+                        choices.remove(node)
+                    j_newneigh = np.random.choice(choices)
+                    self.update_edge([j_node, j_newneigh], 1)
+
+
+class Shortcuts(Regular):
+    """Regular network with additional shortcuts.
+
+    This network differs from the Watts-Strogatz one in that edges are
+    addes instead of rewired. Therefore, in this case the mean degree
+    is not kept constant.
+
+    """
+
+    def __init__(self, nnodes, grade, prob):
+        """Instance initialization method.
+
+        Parameters
+        ----------
+            nnodes : int
+                Number of nodes in the lattice.
+
+            grade : bool
+                Initial number of neighbours for each node (before
+                adding shortcuts). It must be a even number, so that
+                any node has the same number of neighbours at both
+                sides.
+
+            prob : float
+                Shortcut creation probability.
+
+        """
+        # Store parameters
+        self.grade = grade
+        self.prob = prob
+
+        # Initialize the network as a regular one with the given grade
+        Regular.__init__(self, nnodes, grade=grade)
+
+        # Create shortcuts
+        for j_node in range(self.nnodes):
+            # Iterate throgh the edges with nodes verifying i > j_node
+            if np.random.random() < prob: 
+                # List forbidden new edges
+                forbidden = self.neighbours_out(j_node).tolist()
+                forbidden.append(j_node)
+
+                # Create new edge
+                choices = range(self.nnodes)
+                for node in forbidden:
+                    choices.remove(node)
+                j_newneigh = np.random.choice(choices)
+                self.update_edge([j_node, j_newneigh], 1)
