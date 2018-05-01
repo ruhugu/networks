@@ -5,8 +5,7 @@ import numpy as np
 
 class Network(object):
 
-    def __init__(self, nnodes, edgelist=None, weighted=False,
-                      directed=False):
+    def __init__(self, nnodes, edgelist=None, weighted=False, directed=False):
         """Instance initialization method.
 
         Parameters
